@@ -7,7 +7,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Heart, Loader2 } from "lucide-react"
+import { Heart, Loader2, UserCircle } from "lucide-react"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -36,6 +36,25 @@ export default function LoginPage() {
       router.refresh()
     } catch {
       setError("Login failed")
+      setLoading(false)
+    }
+  }
+
+  const handleGuestMode = async () => {
+    setError("")
+    setLoading(true)
+    try {
+      const res = await fetch("/api/auth/guest", { method: "POST" })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || "Guest login failed")
+        setLoading(false)
+        return
+      }
+      router.push("/dashboard")
+      router.refresh()
+    } catch {
+      setError("Guest login failed")
       setLoading(false)
     }
   }
@@ -120,6 +139,17 @@ export default function LoginPage() {
               ) : (
                 "Sign In"
               )}
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              disabled={loading}
+              className="w-full"
+              onClick={handleGuestMode}
+            >
+              <UserCircle className="mr-2 h-4 w-4" />
+              Guest mode
             </Button>
           </form>
 

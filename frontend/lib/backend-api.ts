@@ -54,6 +54,15 @@ export async function registerBackend(email: string, password: string, full_name
   return r.json() as Promise<{ access_token: string; token_type: string }>
 }
 
+export async function guestLoginBackend() {
+  const r = await fetchBackend("/auth/guest", { method: "POST" })
+  if (!r.ok) {
+    const d = await r.json().catch(() => ({}))
+    throw new Error((d.detail as string) || "Guest login failed")
+  }
+  return r.json() as Promise<{ access_token: string; token_type: string }>
+}
+
 export async function getMeBackend(token: string) {
   const r = await fetchBackend("/auth/me", { token })
   if (!r.ok) return null

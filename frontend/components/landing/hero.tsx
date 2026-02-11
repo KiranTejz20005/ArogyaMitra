@@ -1,11 +1,30 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Sparkles, Activity, Brain } from "lucide-react"
+import { ArrowRight, Sparkles, Activity, Brain, UserCircle, Loader2 } from "lucide-react"
 import { motion } from "framer-motion"
 
 export function Hero() {
+  const router = useRouter()
+  const [guestLoading, setGuestLoading] = useState(false)
+
+  const handleGuestMode = async () => {
+    setGuestLoading(true)
+    try {
+      const res = await fetch("/api/auth/guest", { method: "POST" })
+      if (!res.ok) {
+        setGuestLoading(false)
+        return
+      }
+      router.push("/dashboard")
+      router.refresh()
+    } catch {
+      setGuestLoading(false)
+    }
+  }
   return (
     <section className="relative overflow-hidden px-6 py-24 md:py-32">
       {/* Background pattern */}
@@ -61,6 +80,29 @@ export function Hero() {
             </Button>
             <Button size="lg" variant="outline" className="gap-2 px-8 bg-transparent" asChild>
               <Link href="#features">Learn More</Link>
+            </Button>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.35 }}
+            className="mt-4 flex flex-col items-center gap-2"
+          >
+            <p className="text-sm text-muted-foreground">Or skip sign up — try the app as guest</p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={guestLoading}
+              onClick={handleGuestMode}
+              className="gap-2"
+            >
+              {guestLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <UserCircle className="h-4 w-4" />
+              )}
+              Guest mode
             </Button>
           </motion.div>
 

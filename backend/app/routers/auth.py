@@ -64,6 +64,28 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
     return TokenResponse(access_token=token)
 
 
+GUEST_EMAIL = "guest@arogyamitra.local"
+
+
+@router.post("/guest", response_model=TokenResponse)
+def guest_login(db: Session = Depends(get_db)):
+    """Create or reuse a shared guest user and return a token. No email/password required."""
+    user = db.query(User).filter(User.email == GUEST_EMAIL).first()
+    if not user:
+        user = User(
+            email=GUEST_EMAIL,
+            hashed_password=get_password_hash("guest-placeholder-no-login"),
+            full_name="Guest",
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Guest access disabled")
+    token = create_access_token(data={"sub": str(user.id)})
+    return TokenResponse(access_token=token)
+
+
 @router.get("/me", response_model=UserResponse)
 def me(current_user: User = Depends(get_current_user)):
     return current_user
