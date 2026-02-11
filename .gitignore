@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Backend (Python)
+backend/venv/
+backend/.env
+backend/*.db
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Frontend (Next.js)
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env.local
+frontend/.env.*.local
+
+# Root (keep .env out of git if it contains secrets)
+.env
+!.env.example
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

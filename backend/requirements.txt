@@ -1,0 +1,21 @@
+# ArogyaMitra Backend - Python 3.10+
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+python-dotenv==1.0.1
+sqlalchemy==2.0.36
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+email-validator>=2.0
+bcrypt>=4.0.1,<5
+pydantic==2.10.3
+pydantic-settings==2.6.1
+
+# AI & External APIs
+groq==0.7.0
+google-api-python-client==2.149.0
+google-auth-oauthlib>=0.5.2,<2
+google-auth-httplib2>=0.2.0
+httpx==0.28.1
+
+# Optional: Spoonacular (use httpx if not using official client)
+# spoonacular==1.0.0

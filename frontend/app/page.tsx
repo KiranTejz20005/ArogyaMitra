@@ -1,0 +1,25 @@
+import { Navbar } from "@/components/landing/navbar"
+import { Hero } from "@/components/landing/hero"
+import { WorkoutVideosSection } from "@/components/landing/workout-videos-section"
+import { ArogyaMitraSection } from "@/components/landing/arogya-mitra-section"
+import { Features } from "@/components/landing/features"
+import { HowItWorks } from "@/components/landing/how-it-works"
+import { CTA } from "@/components/landing/cta"
+import { Footer } from "@/components/landing/footer"
+
+export default function LandingPage() {
+  return (
+    <div className="flex min-h-screen flex-col">
+      <Navbar />
+      <main className="flex-1">
+        <Hero />
+        <WorkoutVideosSection />
+        <ArogyaMitraSection />
+        <Features />
+        <HowItWorks />
+        <CTA />
+      </main>
+      <Footer />
+    </div>
+  )
+}

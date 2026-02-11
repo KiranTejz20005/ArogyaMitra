@@ -1,0 +1,11 @@
+{
+  "name": "arogyamitra-root",
+  "private": true,
+  "description": "Root for ArogyaMitra frontend + backend. Run frontend and backend from their folders.",
+  "scripts": {
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && python run.py",
+    "install:frontend": "cd frontend && npm install",
+    "build:frontend": "cd frontend && npm run build"
+  }
+}
