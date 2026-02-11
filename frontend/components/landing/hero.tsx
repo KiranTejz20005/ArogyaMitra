@@ -15,13 +15,17 @@ export function Hero() {
     setGuestLoading(true)
     try {
       const res = await fetch("/api/auth/guest", { method: "POST" })
-      if (!res.ok) {
-        setGuestLoading(false)
+      if (res.ok) {
+        router.push("/dashboard")
+        router.refresh()
         return
       }
-      router.push("/dashboard")
+      router.push("/")
       router.refresh()
     } catch {
+      router.push("/")
+      router.refresh()
+    } finally {
       setGuestLoading(false)
     }
   }

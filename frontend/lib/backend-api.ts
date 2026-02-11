@@ -58,7 +58,11 @@ export async function guestLoginBackend() {
   const r = await fetchBackend("/auth/guest", { method: "POST" })
   if (!r.ok) {
     const d = await r.json().catch(() => ({}))
-    throw new Error((d.detail as string) || "Guest login failed")
+    const msg = (d.detail ?? d.error) as string | undefined
+    if (r.status === 404) {
+      throw new Error("Backend guest endpoint not found. Is the API URL correct?")
+    }
+    throw new Error(msg || "Guest login failed")
   }
   return r.json() as Promise<{ access_token: string; token_type: string }>
 }

@@ -45,16 +45,20 @@ export default function LoginPage() {
     setLoading(true)
     try {
       const res = await fetch("/api/auth/guest", { method: "POST" })
-      const data = await res.json()
-      if (!res.ok) {
-        setError(data.error || "Guest login failed")
-        setLoading(false)
+      const data = await res.json().catch(() => ({}))
+      if (res.ok) {
+        router.push("/dashboard")
+        router.refresh()
         return
       }
-      router.push("/dashboard")
+      // Backend unreachable or error: still take user to home screen (landing)
+      router.push("/")
       router.refresh()
     } catch {
-      setError("Guest login failed")
+      // Network or other error: still take user to home screen
+      router.push("/")
+      router.refresh()
+    } finally {
       setLoading(false)
     }
   }

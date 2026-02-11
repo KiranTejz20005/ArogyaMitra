@@ -51,16 +51,18 @@ export default function SignUpPage() {
     setLoading(true)
     try {
       const res = await fetch("/api/auth/guest", { method: "POST" })
-      const data = await res.json()
-      if (!res.ok) {
-        setError(data.error || "Guest login failed")
-        setLoading(false)
+      const data = await res.json().catch(() => ({}))
+      if (res.ok) {
+        router.push("/dashboard")
+        router.refresh()
         return
       }
-      router.push("/dashboard")
+      router.push("/")
       router.refresh()
     } catch {
-      setError("Guest login failed")
+      router.push("/")
+      router.refresh()
+    } finally {
       setLoading(false)
     }
   }
