@@ -3,6 +3,7 @@
 import React from "react"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
@@ -16,7 +17,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
-  Heart,
   LayoutDashboard,
   ClipboardCheck,
   Dumbbell,
@@ -93,9 +93,7 @@ export function DashboardShell({ user, profile, children }: DashboardShellProps)
       {/* Sidebar - Desktop */}
       <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-card lg:flex">
         <div className="flex h-16 items-center gap-2 border-b border-border px-6">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <Heart className="h-4 w-4 text-primary-foreground" />
-          </div>
+          <Image src="/logo.png" alt="" width={32} height={32} className="h-8 w-8 rounded-lg object-contain" />
           <span className="font-display text-lg font-bold text-card-foreground">
             ArogyaMitra
           </span>
@@ -189,9 +187,7 @@ export function DashboardShell({ user, profile, children }: DashboardShellProps)
           <aside className="absolute left-0 top-0 flex h-full w-64 flex-col border-r border-border bg-card">
             <div className="flex h-16 items-center justify-between border-b border-border px-6">
               <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                  <Heart className="h-4 w-4 text-primary-foreground" />
-                </div>
+                <Image src="/logo.png" alt="" width={32} height={32} className="h-8 w-8 rounded-lg object-contain" />
                 <span className="font-display text-lg font-bold text-card-foreground">
                   ArogyaMitra
                 </span>

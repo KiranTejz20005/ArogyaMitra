@@ -76,10 +76,3 @@ So that backend and frontend work together: on **Render** set `CORS_ORIGINS` to 
 - [ ] Login/sign-up and dashboard load; API calls hit backend
 - [ ] No broken imports; no duplicate `node_modules` or configs at root
 
-## Cleanup (required to remove double code)
-
-**Delete the nested project folder** so there is only one codebase:
-
-1. Close any tabs or terminals using files inside `v0-project-credit-analysis`.
-2. In File Explorer or your IDE, delete the folder **`v0-project-credit-analysis`** (the entire folder).
-3. After deletion, the root should contain only: `backend/`, `frontend/`, `shared/`, and root config files. No duplicate app, backend, or package.json.

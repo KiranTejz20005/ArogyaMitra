@@ -1,37 +1,17 @@
 import { getDashboardUser } from "@/lib/get-dashboard-user"
-import { getAppBaseUrl } from "@/lib/app-base-url"
+import { getBackendProfileAndAssessment } from "@/lib/backend-profile"
 import { ProfileView } from "@/components/dashboard/profile-view"
 
 async function getProfileData(userId: string, source: "supabase" | "backend") {
   if (source === "backend") {
-    const base = getAppBaseUrl()
     const { cookies } = await import("next/headers")
     const cookieStore = await cookies()
-    const res = await fetch(`${base}/api/backend/auth/me`, {
-      headers: { cookie: cookieStore.toString() },
-    })
-    if (!res.ok) return { profile: null, assessment: null }
-    const u = await res.json()
-    const profile = {
-      full_name: u.full_name ?? null,
-      email: u.email ?? null,
-      avatar_url: null,
-      age: null,
-      gender: null,
-      height_cm: null,
-      weight_kg: null,
-      fitness_goal: null,
-      activity_level: null,
-      dietary_preference: null,
-    }
-    const healthRes = await fetch(`${base}/api/backend/health`, {
-      headers: { cookie: cookieStore.toString() },
-    })
-    const assessment = healthRes.ok ? await healthRes.json() : null
+    const { profile, assessment } = await getBackendProfileAndAssessment(
+      cookieStore.toString()
+    )
     return {
-      profile,
+      profile: profile ? { id: userId, ...profile } : null,
       assessment,
-      user: { id: userId, email: u.email },
     }
   }
   const { createClient } = await import("@/lib/supabase/server")
@@ -65,6 +45,7 @@ export default async function ProfilePage() {
   return (
     <ProfileView
       user={{ id: user.id, email: user.email }}
+      source={user.source}
       profile={profile}
       assessment={assessment}
     />

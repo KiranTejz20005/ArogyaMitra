@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
 import {
@@ -10,7 +11,6 @@ import {
     BarChart2,
     Calendar,
     Settings,
-    ShieldCheck,
     User,
     Search,
     PlusCircle,
@@ -47,9 +47,7 @@ export function Sidebar() {
         <div className="flex h-full w-64 flex-col border-r bg-card/50 backdrop-blur-xl">
             <div className="flex h-16 items-center border-b px-6">
                 <Link href="/dashboard" className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                        <ShieldCheck className="h-5 w-5 text-primary-foreground" />
-                    </div>
+                    <Image src="/logo.png" alt="" width={32} height={32} className="h-8 w-8 rounded-lg object-contain" />
                     <span className="font-display text-lg font-bold">ArogyaMitra</span>
                 </Link>
             </div>

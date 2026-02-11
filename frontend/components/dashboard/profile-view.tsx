@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import type { User } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -20,9 +19,10 @@ import { getStoredAvatarUrl, setStoredAvatarUrl } from "@/lib/avatar-store"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Loader2, Save, UserCircle, Activity, Target, Scale, Camera } from "lucide-react"
+import { toast } from "sonner"
 
 interface Profile {
-  id: string
+  id?: string
   full_name: string | null
   age: number | null
   gender: string | null
@@ -42,13 +42,15 @@ interface Assessment {
 }
 
 interface ProfileViewProps {
-  user: User
+  user: { id: string; email?: string }
+  source?: "backend" | "supabase"
   profile: Profile | null
   assessment: Assessment | null
 }
 
-export function ProfileView({ user, profile, assessment }: ProfileViewProps) {
+export function ProfileView({ user, source = "backend", profile, assessment }: ProfileViewProps) {
   const router = useRouter()
+  const [mounted, setMounted] = useState(false)
   const [saving, setSaving] = useState(false)
   const [fullName, setFullName] = useState(profile?.full_name || "")
   const [age, setAge] = useState(profile?.age?.toString() || "")
@@ -59,6 +61,10 @@ export function ProfileView({ user, profile, assessment }: ProfileViewProps) {
   const [activityLevel, setActivityLevel] = useState(profile?.activity_level || "")
   const [dietaryPref, setDietaryPref] = useState(profile?.dietary_preference || "")
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
   useEffect(() => {
     setAvatarUrl(getStoredAvatarUrl())
   }, [])
@@ -72,25 +78,57 @@ export function ProfileView({ user, profile, assessment }: ProfileViewProps) {
 
   const handleSave = async () => {
     setSaving(true)
-    const supabase = createClient()
-
-    await supabase
-      .from("profiles")
-      .update({
-        full_name: fullName || null,
-        age: age ? parseInt(age) : null,
-        gender: gender || null,
-        height_cm: heightCm ? parseFloat(heightCm) : null,
-        weight_kg: weightKg ? parseFloat(weightKg) : null,
-        fitness_goal: fitnessGoal || null,
-        activity_level: activityLevel || null,
-        dietary_preference: dietaryPref || null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", user.id)
-
-    setSaving(false)
-    router.refresh()
+    try {
+      if (source === "backend") {
+        const res = await fetch("/api/profile", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            full_name: fullName || null,
+            assessment: {
+              age: age ? parseInt(age, 10) : null,
+              gender: gender || null,
+              height_cm: heightCm ? parseFloat(heightCm) : null,
+              weight_kg: weightKg ? parseFloat(weightKg) : null,
+              fitness_goal: fitnessGoal || null,
+              activity_level: activityLevel || null,
+              dietary_preference: dietaryPref || null,
+            },
+          }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          toast.error(data.error || "Failed to save profile")
+          setSaving(false)
+          return
+        }
+        toast.success("Profile saved")
+      } else {
+        const supabase = createClient()
+        const { error } = await supabase
+          .from("profiles")
+          .update({
+            full_name: fullName || null,
+            age: age ? parseInt(age, 10) : null,
+            gender: gender || null,
+            height_cm: heightCm ? parseFloat(heightCm) : null,
+            weight_kg: weightKg ? parseFloat(weightKg) : null,
+            fitness_goal: fitnessGoal || null,
+            activity_level: activityLevel || null,
+            dietary_preference: dietaryPref || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", user.id)
+        if (error) {
+          toast.error(error.message || "Failed to save profile")
+        } else {
+          toast.success("Profile saved")
+        }
+      }
+      router.refresh()
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -109,6 +147,57 @@ export function ProfileView({ user, profile, assessment }: ProfileViewProps) {
   const handleRemoveAvatar = () => {
     setStoredAvatarUrl(null)
     setAvatarUrl(null)
+  }
+
+  if (!mounted) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div>
+          <div className="h-7 w-48 animate-pulse rounded bg-muted" />
+          <div className="mt-1 h-4 w-64 animate-pulse rounded bg-muted" />
+        </div>
+        <Card>
+          <CardContent className="flex items-center gap-5 p-6">
+            <div className="h-16 w-16 animate-pulse rounded-full bg-muted" />
+            <div className="flex-1 space-y-2">
+              <div className="h-5 w-32 animate-pulse rounded bg-muted" />
+              <div className="h-4 w-48 animate-pulse rounded bg-muted" />
+            </div>
+          </CardContent>
+        </Card>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <div className="h-5 w-40 animate-pulse rounded bg-muted" />
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <div className="h-10 w-full animate-pulse rounded bg-muted" />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="h-10 animate-pulse rounded bg-muted" />
+                <div className="h-10 animate-pulse rounded bg-muted" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="h-10 animate-pulse rounded bg-muted" />
+                <div className="h-10 animate-pulse rounded bg-muted" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <div className="h-5 w-44 animate-pulse rounded bg-muted" />
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <div className="h-10 w-full animate-pulse rounded bg-muted" />
+              <div className="h-10 w-full animate-pulse rounded bg-muted" />
+              <div className="h-10 w-full animate-pulse rounded bg-muted" />
+            </CardContent>
+          </Card>
+        </div>
+        <div className="flex justify-end">
+          <div className="h-10 w-28 animate-pulse rounded bg-muted" />
+        </div>
+      </div>
+    )
   }
 
   return (

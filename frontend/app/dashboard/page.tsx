@@ -19,11 +19,12 @@ export default async function DashboardPage() {
   const plans = plansRes.ok ? await plansRes.json() : []
   const progressList = progressRes.ok ? await progressRes.json() : []
 
+  const a = assessment as { weight_kg?: number; fitness_goal?: string } | null
   const profile = user
     ? {
         full_name: user.full_name ?? null,
-        weight_kg: (assessment as { bmi?: number })?.bmi ?? null,
-        fitness_goal: (assessment as { fitness_goal?: string })?.fitness_goal ?? null,
+        weight_kg: a?.weight_kg ?? null,
+        fitness_goal: a?.fitness_goal ?? null,
       }
     : null
 

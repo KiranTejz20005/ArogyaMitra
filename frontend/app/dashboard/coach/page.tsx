@@ -1,11 +1,17 @@
 import { getDashboardUser } from "@/lib/get-dashboard-user"
+import { getBackendProfileAndAssessment } from "@/lib/backend-profile"
 import { CoachView } from "@/components/dashboard/coach-view"
 
 async function getCoachData(userId: string, source: "supabase" | "backend") {
   if (source === "backend") {
+    const { cookies } = await import("next/headers")
+    const cookieStore = await cookies()
+    const { profile, assessment } = await getBackendProfileAndAssessment(
+      cookieStore.toString()
+    )
     return {
-      profile: null,
-      assessment: null,
+      profile,
+      assessment,
       chatSessions: [] as unknown[],
     }
   }

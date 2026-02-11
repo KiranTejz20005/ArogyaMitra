@@ -260,9 +260,7 @@ export function NutritionView({
       const data = await res.json()
       clearInterval(interval)
 
-      if (data.fallback) {
-        toast.info("We've prepared an optimized meal plan for you!")
-      } else if (data.error) {
+      if (data.error && !data.fallback) {
         toast.warning(data.error)
       }
 

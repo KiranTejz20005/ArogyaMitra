@@ -1,16 +1,18 @@
 "use client"
 
 import { Suspense } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { Play } from "lucide-react"
+import { Play, ArrowLeft } from "lucide-react"
 import { Navbar } from "@/components/landing/navbar"
+import { Button } from "@/components/ui/button"
 import { YouTubePlayerWithControls } from "@/components/video/youtube-player-with-controls"
 import { VIDEOS } from "@/lib/videos"
 import type { VideoId } from "@/lib/videos"
 
 function VideosContent() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const videoParam = searchParams.get("v") as VideoId | null
   const selectedVideo = VIDEOS.find((v) => v.id === videoParam) ?? VIDEOS[0]
@@ -26,6 +28,17 @@ function VideosContent() {
           transition={{ duration: 0.4 }}
           className="space-y-8"
         >
+          {/* Back option */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="-ml-2 text-muted-foreground hover:text-foreground"
+            onClick={() => router.back()}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+
           {/* Main player with custom controls */}
           <div className="overflow-hidden rounded-2xl border border-border/50 bg-card/50 shadow-xl">
             <YouTubePlayerWithControls

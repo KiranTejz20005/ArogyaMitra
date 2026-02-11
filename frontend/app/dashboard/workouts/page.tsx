@@ -1,19 +1,25 @@
 import { getDashboardUser } from "@/lib/get-dashboard-user"
+import { getBackendProfileAndAssessment } from "@/lib/backend-profile"
+import { getAppBaseUrl } from "@/lib/app-base-url"
 import { WorkoutPlansView } from "@/components/dashboard/workout-plans-view"
 
 async function getWorkoutData(userId: string, source: "supabase" | "backend") {
   if (source === "backend") {
     const { cookies } = await import("next/headers")
-    const { getAppBaseUrl } = await import("@/lib/app-base-url")
     const cookieStore = await cookies()
-    const res = await fetch(`${getAppBaseUrl()}/api/backend/workouts/plans`, {
-      headers: { cookie: cookieStore.toString() },
-    })
-    if (!res.ok) return { plans: [], profile: null }
-    const plans = await res.json()
+    const cookieHeader = cookieStore.toString()
+    const [plansRes, { profile, assessment }] = await Promise.all([
+      fetch(`${getAppBaseUrl()}/api/backend/workouts/plans`, {
+        headers: { cookie: cookieHeader },
+        cache: "no-store",
+      }),
+      getBackendProfileAndAssessment(cookieHeader),
+    ])
+    const plans = plansRes.ok ? await plansRes.json() : []
     return {
       plans: Array.isArray(plans) ? plans : [],
-      profile: null,
+      profile,
+      assessment,
     }
   }
   const { createClient } = await import("@/lib/supabase/server")
@@ -33,6 +39,7 @@ async function getWorkoutData(userId: string, source: "supabase" | "backend") {
   return {
     plans: workoutPlans ?? [],
     profile,
+    assessment: null,
   }
 }
 
@@ -40,13 +47,14 @@ export default async function WorkoutsPage() {
   const user = await getDashboardUser()
   if (!user) return null
 
-  const { plans, profile } = await getWorkoutData(user.id, user.source)
+  const { plans, profile, assessment } = await getWorkoutData(user.id, user.source)
 
   return (
     <WorkoutPlansView
       userId={user.id}
       workoutPlans={plans}
       profile={profile}
+      assessment={assessment}
     />
   )
 }

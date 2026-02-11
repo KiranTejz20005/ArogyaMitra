@@ -27,9 +27,23 @@ export type VideoId = (typeof VIDEOS)[number]["id"]
 /** Map exercise names to embedded YouTube video IDs (no API - uses our curated list) */
 export function getVideoIdForExercise(exerciseName: string): string | null {
   const name = exerciseName.toLowerCase()
-  if (name.includes("walk") || name.includes("jog")) return "enYITYwvPAQ"
-  if (name.includes("yoga") || name.includes("stretch")) return "TJXFF0LknNs"
-  if (name.includes("squat") || name.includes("hiit") || name.includes("burpee"))
-    return "mpfAv1KL_YM"
+  if (name.includes("walk") || name.includes("jog") || name.includes("brisk")) return "enYITYwvPAQ"
+  if (name.includes("yoga") || name.includes("stretch") || name.includes("flow")) return "TJXFF0LknNs"
+  if (name.includes("squat") || name.includes("hiit") || name.includes("burpee")) return "mpfAv1KL_YM"
+  if (name.includes("push") || name.includes("pushup") || name.includes("press")) return "gC_L9qAHVJ8"
+  if (name.includes("plank") || name.includes("core") || name.includes("ab")) return "gC_L9qAHVJ8"
+  if (name.includes("lunge") || name.includes("leg")) return "mpfAv1KL_YM"
+  if (name.includes("crunch") || name.includes("sit-up") || name.includes("abs")) return "gC_L9qAHVJ8"
+  if (name.includes("jumping jack") || name.includes("jump")) return "mpfAv1KL_YM"
+  if (name.includes("mountain climber")) return "gC_L9qAHVJ8"
+  if (name.includes("dip") || name.includes("tricep")) return "gC_L9qAHVJ8"
+  if (name.includes("deadlift") || name.includes("rdl") || name.includes("romanian")) return "mpfAv1KL_YM"
+  if (name.includes("row") || name.includes("pull")) return "gC_L9qAHVJ8"
+  if (name.includes("curl") || name.includes("bicep")) return "gC_L9qAHVJ8"
+  if (name.includes("calf") || name.includes("raise")) return "gC_L9qAHVJ8"
+  if (name.includes("bridge") || name.includes("glute")) return "mpfAv1KL_YM"
+  if (name.includes("bird dog")) return "gC_L9qAHVJ8"
+  if (name.includes("foam roll") || name.includes("recovery")) return "TJXFF0LknNs"
+  if (name.includes("swim") || name.includes("bike") || name.includes("cardio")) return "cvEJ5WFk2KE"
   return "gC_L9qAHVJ8" // default: general workout
 }

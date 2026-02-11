@@ -1,19 +1,25 @@
 import { getDashboardUser } from "@/lib/get-dashboard-user"
+import { getBackendProfileAndAssessment } from "@/lib/backend-profile"
+import { getAppBaseUrl } from "@/lib/app-base-url"
 import { NutritionView } from "@/components/dashboard/nutrition-view"
 
 async function getNutritionData(userId: string, source: "supabase" | "backend") {
   if (source === "backend") {
     const { cookies } = await import("next/headers")
-    const { getAppBaseUrl } = await import("@/lib/app-base-url")
     const cookieStore = await cookies()
-    const res = await fetch(`${getAppBaseUrl()}/api/backend/nutrition/plans`, {
-      headers: { cookie: cookieStore.toString() },
-    })
-    const plans = res.ok ? await res.json() : []
+    const cookieHeader = cookieStore.toString()
+    const [plansRes, { profile, assessment }] = await Promise.all([
+      fetch(`${getAppBaseUrl()}/api/backend/nutrition/plans`, {
+        headers: { cookie: cookieHeader },
+        cache: "no-store",
+      }),
+      getBackendProfileAndAssessment(cookieHeader),
+    ])
+    const plans = plansRes.ok ? await plansRes.json() : []
     return {
       plans: Array.isArray(plans) ? plans : [],
-      profile: null,
-      assessment: null,
+      profile,
+      assessment,
     }
   }
   const { createClient } = await import("@/lib/supabase/server")

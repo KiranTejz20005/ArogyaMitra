@@ -1,11 +1,55 @@
 import { createClient } from "@/lib/supabase/server"
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
+import { getTokenFromCookie } from "@/lib/backend-api"
+import { API_CONFIG } from "@/config/api"
 
 export async function POST(
-  _req: Request,
+  req: NextRequest,
   { params }: { params: Promise<{ exerciseId: string }> }
 ) {
   const { exerciseId } = await params
+  const token = getTokenFromCookie(req.headers.get("cookie") ?? null)
+
+  let body: {
+    sets_completed?: number
+    reps_completed?: number
+    duration_minutes?: number
+    calories_burned?: number
+    plan_id?: string
+  } = {}
+  try {
+    body = await req.json()
+  } catch {
+    // Empty body ok
+  }
+
+  // Backend (email/JWT) users: record completion via API
+  if (token) {
+    try {
+      const res = await fetch(`${API_CONFIG.getBackendUrl()}/workouts/complete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          exercise_name: exerciseId,
+          plan_id: body.plan_id ?? null,
+          sets_completed: body.sets_completed ?? 0,
+          reps_completed: body.reps_completed ?? 0,
+          duration_minutes: body.duration_minutes ?? 0,
+          calories_burned: body.calories_burned ?? 0,
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        return NextResponse.json({ success: true, ...data })
+      }
+    } catch {
+      // fall through to Supabase path if backend fails
+    }
+  }
+
   const supabase = await createClient()
   const {
     data: { user },
@@ -13,18 +57,6 @@ export async function POST(
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
-  let body: {
-    sets_completed?: number
-    reps_completed?: number
-    duration_minutes?: number
-    calories_burned?: number
-  } = {}
-  try {
-    body = await _req.json()
-  } catch {
-    // Empty body ok
   }
 
   const { data: exercise, error: exError } = await supabase

@@ -35,6 +35,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
+import { getVideoIdForExercise } from "@/lib/videos"
 
 interface Exercise {
   id?: string | null
@@ -73,7 +74,8 @@ interface WorkoutPlan {
 interface WorkoutPlansViewProps {
   userId: string
   workoutPlans: WorkoutPlan[]
-  profile: { fitness_goal: string | null; activity_level: string | null } | null
+  profile: { fitness_goal?: string | null; activity_level?: string | null } | null
+  assessment?: { bmi?: number | null; bmi_category?: string | null } | null
 }
 
 function ConfettiCelebration() {
@@ -107,6 +109,7 @@ export function WorkoutPlansView({
   userId,
   workoutPlans,
   profile,
+  assessment: _assessment,
 }: WorkoutPlansViewProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -137,7 +140,6 @@ export function WorkoutPlansView({
   const fetchToday = useCallback(async () => {
     const res = await fetch("/api/workouts/today")
     const data = await res.json()
-    if (data.fallback) toast.warning("API failed to retrieve. Showing sample data.")
     setTodayWorkout(data)
     if (data.workout?.completed_exercises) {
       setCompletedExercises(new Set(data.workout.completed_exercises))
@@ -147,7 +149,6 @@ export function WorkoutPlansView({
   const fetchPlan = useCallback(async () => {
     const res = await fetch("/api/workouts")
     const data = await res.json()
-    if (data.fallback) toast.warning("API failed to retrieve. Showing sample data.")
     setFullPlan(data.plan)
   }, [])
 
@@ -209,7 +210,6 @@ export function WorkoutPlansView({
             })
           }
         }
-        toast.info("We've prepared an optimized workout plan for you!")
       } else if (data.error) {
         toast.error(data.error)
         setGenerating(false)
@@ -246,8 +246,9 @@ export function WorkoutPlansView({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          plan_id: workout.plan_id ?? undefined,
           sets_completed: exercise.sets,
-          reps_completed: parseInt(repsInput) || 0,
+          reps_completed: parseInt(repsInput, 10) || 0,
           duration_minutes: Math.floor(workoutTimer / 60),
           calories_burned: Math.round(workout.total_duration * 5),
         }),
@@ -305,7 +306,7 @@ export function WorkoutPlansView({
             AI-generated 7-day plans tailored to you
           </p>
         </div>
-        {!fullPlan && (
+        {(!fullPlan || fullPlan?.id === "dummy") && (
           <Button
             onClick={handleGeneratePlan}
             disabled={generating}
@@ -460,14 +461,11 @@ export function WorkoutPlansView({
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() =>
-                              ex.youtube_url &&
-                              setActiveVideo({
-                                url: ex.youtube_url,
-                                exercise: ex,
-                              })
-                            }
-                            disabled={!ex.youtube_url}
+                            onClick={() => {
+                              const url = ex.youtube_url ?? (getVideoIdForExercise(ex.name) ? `https://www.youtube.com/watch?v=${getVideoIdForExercise(ex.name)}` : null)
+                              if (url) setActiveVideo({ url, exercise: ex })
+                            }}
+                            disabled={!ex.youtube_url && !getVideoIdForExercise(ex.name)}
                           >
                             <Play className="mr-2 h-4 w-4" /> Play Video
                           </Button>
@@ -513,59 +511,67 @@ export function WorkoutPlansView({
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {dailyWorkouts.map((dw) => {
-                const isRest =
-                  !dw.exercises || dw.exercises.length === 0
+                const exercises = Array.isArray(dw.exercises) ? dw.exercises : []
+                const isRest = exercises.length === 0
                 const expanded = expandedDay === dw.day
+                const warmupText = typeof dw.warmup === "string" ? dw.warmup.slice(0, 50) : ""
                 return (
-                  <Card key={dw.day}>
-                    <CardHeader
-                      className="cursor-pointer"
-                      onClick={() =>
-                        setExpandedDay(expanded ? null : dw.day)
-                      }
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <CardTitle className="text-base">
-                            {dw.day_name}
-                          </CardTitle>
-                          <p className="text-sm text-muted-foreground">
-                            {isRest ? "Rest Day" : dw.focus}
-                          </p>
-                        </div>
-                        {expanded ? (
-                          <ChevronUp className="h-4 w-4" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4" />
+                  <Collapsible
+                    key={`${dw.day}-${dw.day_name}`}
+                    open={expanded}
+                    onOpenChange={(open) => setExpandedDay(open ? dw.day : null)}
+                  >
+                    <Card>
+                      <CollapsibleTrigger asChild>
+                        <CardHeader className="cursor-pointer select-none text-left">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <CardTitle className="text-base">
+                                {dw.day_name}
+                              </CardTitle>
+                              <p className="text-sm text-muted-foreground">
+                                {isRest ? "Rest Day" : dw.focus}
+                              </p>
+                            </div>
+                            {expanded ? (
+                              <ChevronUp className="h-4 w-4 shrink-0" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4 shrink-0" />
+                            )}
+                          </div>
+                          {!isRest && (
+                            <div className="mt-2 flex gap-2">
+                              <Badge variant="secondary" className="text-xs">
+                                {dw.total_duration ?? 0} min
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                {exercises.length} exercises
+                              </Badge>
+                            </div>
+                          )}
+                        </CardHeader>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        {!isRest && (
+                          <CardContent className="pt-0">
+                            <p className="mb-2 text-xs text-muted-foreground">
+                              ⏰ {dw.recommended_time ?? ""}
+                            </p>
+                            <ul className="space-y-1 text-sm">
+                              {exercises.map((e) => (
+                                <li key={e.name}>• {e.name}</li>
+                              ))}
+                            </ul>
+                            {warmupText && (
+                              <p className="mt-3 text-xs text-muted-foreground">
+                                Warmup: {warmupText}...
+                              </p>
+                            )}
+                          </CardContent>
                         )}
-                      </div>
-                      {!isRest && (
-                        <div className="mt-2 flex gap-2">
-                          <Badge variant="secondary" className="text-xs">
-                            {dw.total_duration} min
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            {dw.exercises.length} exercises
-                          </Badge>
-                        </div>
-                      )}
-                    </CardHeader>
-                    {expanded && !isRest && (
-                      <CardContent className="pt-0">
-                        <p className="mb-2 text-xs text-muted-foreground">
-                          ⏰ {dw.recommended_time}
-                        </p>
-                        <ul className="space-y-1 text-sm">
-                          {dw.exercises.map((e) => (
-                            <li key={e.name}>• {e.name}</li>
-                          ))}
-                        </ul>
-                        <p className="mt-3 text-xs text-muted-foreground">
-                          Warmup: {dw.warmup.slice(0, 50)}...
-                        </p>
-                      </CardContent>
-                    )}
-                  </Card>
+                      </CollapsibleContent>
+                    </Card>
+                  </Collapsible>
                 )
               })}
             </div>
@@ -573,7 +579,7 @@ export function WorkoutPlansView({
         </TabsContent>
       </Tabs>
 
-      <Dialog open={!!activeVideo} onOpenChange={() => setActiveVideo(null)}>
+      <Dialog open={!!activeVideo} onOpenChange={(open) => !open && setActiveVideo(null)}>
         <DialogContent className="max-h-[95vh] max-w-4xl overflow-y-auto">
           {activeVideo && (
             <>
@@ -586,8 +592,8 @@ export function WorkoutPlansView({
                     <iframe
                       width="100%"
                       height="100%"
-                      src={activeVideo.url.replace("watch?v=", "embed/")}
-                      title="Exercise"
+                      src={activeVideo.url.includes("/embed/") ? activeVideo.url : activeVideo.url.replace("watch?v=", "embed/")}
+                      title={activeVideo.exercise.name}
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
                     />
