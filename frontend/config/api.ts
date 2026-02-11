@@ -11,7 +11,8 @@ function getBackendUrl(): string {
     process.env.API_URL ||
     process.env.NEXT_PUBLIC_BACKEND_URL ||
     process.env.BACKEND_URL
-  if (url) return url.replace(/\/$/, "") // no trailing slash
+  const trimmed = typeof url === "string" ? url.replace(/\/$/, "") : ""
+  if (trimmed) return trimmed
   if (process.env.NODE_ENV === "development") {
     return "http://localhost:8000"
   }

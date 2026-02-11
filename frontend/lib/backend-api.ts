@@ -68,9 +68,13 @@ export async function guestLoginBackend() {
 }
 
 export async function getMeBackend(token: string) {
-  const r = await fetchBackend("/auth/me", { token })
-  if (!r.ok) return null
-  return r.json() as Promise<{ id: number; email: string; full_name: string | null; is_active: boolean }>
+  try {
+    const r = await fetchBackend("/auth/me", { token })
+    if (!r.ok) return null
+    return r.json() as Promise<{ id: number; email: string; full_name: string | null; is_active: boolean }>
+  } catch {
+    throw new Error("Backend unreachable")
+  }
 }
 
 // Re-export for middleware/layout

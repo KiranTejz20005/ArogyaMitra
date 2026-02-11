@@ -31,6 +31,7 @@ export async function getDashboardUser(): Promise<DashboardUser> {
     const cookieStore = await cookies()
     const res = await fetch(`${getAppBaseUrl()}/api/backend/auth/me`, {
       headers: { cookie: cookieStore.toString() },
+      cache: "no-store",
     })
     if (res.ok) {
       const u = (await res.json()) as {
