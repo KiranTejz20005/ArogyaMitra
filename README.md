@@ -46,10 +46,22 @@ App: http://localhost:3000
 - Config: `frontend/config/api.ts` and `frontend/lib/backend-api.ts`.
 - Backend CORS must allow the frontend origin; set in `backend/.env` as `CORS_ORIGINS`.
 
-## Deploy (Render)
+## Deploy (Render + Vercel in sync)
 
-- **Backend**: Build command `pip install -r requirements.txt`. Start command `uvicorn app.main:app --host 0.0.0.0 --port $PORT`. Set env: `SECRET_KEY`, `DATABASE_URL`, `CORS_ORIGINS` (your frontend URL), `GROQ_API_KEY`.
-- **Frontend**: Build `npm install && npm run build`. Start `npm start`. Set `NEXT_PUBLIC_API_URL` to your backend URL (e.g. `https://your-backend.onrender.com`) and `NEXT_PUBLIC_APP_URL` to your frontend URL.
+**Backend (Render)**  
+- Root Directory: `backend`  
+- Build: `pip install -r requirements.txt`  
+- Start: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`  
+- Env: `SECRET_KEY`, `DATABASE_URL`, `GROQ_API_KEY`, and **`CORS_ORIGINS`** = your **frontend** URL (e.g. `https://your-app.vercel.app` with no trailing slash).  
+- Example backend URL: `https://arogyamitra-657d.onrender.com`
+
+**Frontend (Vercel)**  
+- Root Directory: `frontend`  
+- Env (required for backend sync):  
+  - **`NEXT_PUBLIC_API_URL`** = your Render backend URL, e.g. `https://arogyamitra-657d.onrender.com`  
+  - **`NEXT_PUBLIC_APP_URL`** = your Vercel app URL, e.g. `https://your-app.vercel.app`
+
+So that backend and frontend work together: on **Render** set `CORS_ORIGINS` to your Vercel URL; on **Vercel** set `NEXT_PUBLIC_API_URL` to your Render backend URL (`https://arogyamitra-657d.onrender.com`).
 
 ## Env
 

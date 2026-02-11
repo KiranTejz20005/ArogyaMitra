@@ -28,6 +28,7 @@ import {
   LogOut,
   Menu,
   X,
+  Video,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { FloatingAromi } from "@/components/dashboard/floating-aromi"
@@ -56,6 +57,7 @@ const navItems = [
   { href: "/dashboard/nutrition", label: "Nutrition", icon: Salad },
   { href: "/dashboard/progress", label: "Progress", icon: TrendingUp },
   { href: "/dashboard/achievements", label: "Achievements", icon: Trophy },
+  { href: "/videos", label: "YouTube Videos", icon: Video },
   { href: "/dashboard/coach", label: "AROMI Coach", icon: MessageCircle },
   { href: "/dashboard/profile", label: "Profile", icon: UserCircle },
 ]
