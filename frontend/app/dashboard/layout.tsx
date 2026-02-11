@@ -15,8 +15,10 @@ export default async function DashboardLayout({
 
   let user: { id: string; email?: string } | null = null
   try {
-    const res = await fetch(`${getAppBaseUrl()}/api/backend/auth/me`, {
+    const base = getAppBaseUrl()
+    const res = await fetch(`${base}/api/backend/auth/me`, {
       headers: { cookie: cookieStore.toString() },
+      cache: "no-store",
     })
     if (res.ok) user = await res.json()
   } catch {

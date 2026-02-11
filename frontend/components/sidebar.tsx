@@ -28,7 +28,7 @@ const navItems = [
     { name: "Workout Plans", href: "/dashboard/workouts", icon: Dumbbell },
     { name: "Nutrition", href: "/dashboard/nutrition", icon: Utensils },
     { name: "Progress", href: "/dashboard/progress", icon: BarChart2 },
-    { name: "Community", href: "/dashboard/community", icon: Search },
+    { name: "Videos", href: "/videos", icon: Search },
 ]
 
 export function Sidebar() {

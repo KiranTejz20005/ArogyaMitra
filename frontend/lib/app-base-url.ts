@@ -1,17 +1,18 @@
 /**
  * Base URL of this app for server-side fetch to own API routes.
  * Use for dashboard pages that call /api/backend/* with cookies.
- * Set NEXT_PUBLIC_APP_URL in production (e.g. Render); Vercel uses NEXT_PUBLIC_VERCEL_URL.
+ * Vercel sets NEXT_PUBLIC_VERCEL_URL and VERCEL_URL; avoid throwing so dashboard always loads.
  */
 export function getAppBaseUrl(): string {
-  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL
+  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "")
   if (process.env.NEXT_PUBLIC_VERCEL_URL) {
-    return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+    return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`.replace(/\/$/, "")
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`.replace(/\/$/, "")
   }
   if (process.env.NODE_ENV === "development") {
-    return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+    return (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(/\/$/, "")
   }
-  throw new Error(
-    "Missing app URL: set NEXT_PUBLIC_APP_URL (e.g. https://your-app.onrender.com)"
-  )
+  return "http://localhost:3000"
 }

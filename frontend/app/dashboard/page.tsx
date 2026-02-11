@@ -8,10 +8,10 @@ export default async function DashboardPage() {
   const cookieHeader = cookieStore.toString()
 
   const [userRes, assessmentRes, plansRes, progressRes] = await Promise.all([
-    fetch(`${base}/api/backend/auth/me`, { headers: { cookie: cookieHeader } }),
-    fetch(`${base}/api/backend/health`, { headers: { cookie: cookieHeader } }),
-    fetch(`${base}/api/backend/workouts/plans`, { headers: { cookie: cookieHeader } }),
-    fetch(`${base}/api/backend/progress`, { headers: { cookie: cookieHeader } }),
+    fetch(`${base}/api/backend/auth/me`, { headers: { cookie: cookieHeader }, cache: "no-store" }),
+    fetch(`${base}/api/backend/health`, { headers: { cookie: cookieHeader }, cache: "no-store" }),
+    fetch(`${base}/api/backend/workouts/plans`, { headers: { cookie: cookieHeader }, cache: "no-store" }),
+    fetch(`${base}/api/backend/progress`, { headers: { cookie: cookieHeader }, cache: "no-store" }),
   ])
 
   const user = userRes.ok ? ((await userRes.json()) as { id: number; email?: string; full_name?: string | null }) : null
