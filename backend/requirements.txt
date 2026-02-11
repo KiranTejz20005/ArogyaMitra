@@ -15,7 +15,8 @@ groq==0.7.0
 google-api-python-client==2.149.0
 google-auth-oauthlib>=0.5.2,<2
 google-auth-httplib2>=0.2.0
-httpx==0.28.1
+# Pin httpx<0.28: Groq SDK passes 'proxies' to httpx.Client; httpx 0.28+ removed it
+httpx>=0.27.0,<0.28
 
 # Optional: Spoonacular (use httpx if not using official client)
 # spoonacular==1.0.0
