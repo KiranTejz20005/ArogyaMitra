@@ -1,62 +1,10 @@
+import { NextResponse } from "next/server"
 import { createGroq } from "@ai-sdk/groq"
 import { generateText } from "ai"
-import { NextResponse } from "next/server"
+import { getTokenFromCookie } from "@/lib/backend-api"
+import { API_CONFIG } from "@/config/api"
 
-const groq = createGroq({
-  apiKey: process.env.GROQ_API_KEY,
-})
-
-// Calorie calculation helpers
-function calculateBMR(weight: number, height: number, age: number, gender: string): number {
-  // Mifflin-St Jeor Equation
-  if (gender === "female") {
-    return 10 * weight + 6.25 * height - 5 * age - 161
-  }
-  return 10 * weight + 6.25 * height - 5 * age + 5
-}
-
-function getActivityFactor(activityLevel: string): number {
-  switch (activityLevel?.toLowerCase()) {
-    case "beginner":
-    case "sedentary":
-      return 1.375
-    case "intermediate":
-    case "moderate":
-      return 1.55
-    case "advanced":
-    case "active":
-      return 1.725
-    default:
-      return 1.55
-  }
-}
-
-function calculateDailyCalories(
-  weight: number,
-  height: number,
-  age: number,
-  gender: string,
-  activityLevel: string,
-  fitnessGoal: string
-): number {
-  const bmr = calculateBMR(weight, height, age, gender)
-  const activityFactor = getActivityFactor(activityLevel)
-  const tdee = bmr * activityFactor
-
-  switch (fitnessGoal?.toLowerCase()) {
-    case "weight_loss":
-    case "lose weight":
-      return Math.round(tdee - 500)
-    case "muscle_gain":
-    case "build muscle":
-      return Math.round(tdee + 300)
-    case "maintenance":
-    case "stay fit":
-    case "general_fitness":
-    default:
-      return Math.round(tdee)
-  }
-}
+const groq = createGroq({ apiKey: process.env.GROQ_API_KEY })
 
 function getFallbackNutritionPlan(calories: number): any {
   return {
@@ -64,135 +12,169 @@ function getFallbackNutritionPlan(calories: number): any {
     macro_targets: { protein_percent: 25, carbs_percent: 50, fat_percent: 25 },
     weekly_tips: [
       "Drink at least 3L of water daily",
-      "Include a portion of protein in every meal",
-      "Avoid processed sugars and refined flour",
-      "Focus on leafy greens and seasonal vegetables",
-      "Maintain consistent meal timings"
+      "Include more green leafy vegetables",
+      "Avoid processed sugar and deep-fried foods",
+      "Practice portion control",
     ],
     daily_plans: Array.from({ length: 7 }, (_, i) => ({
       day: i + 1,
       day_name: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"][i],
       total_calories: calories,
       meals: [
-        { meal_type: "Breakfast", time: "8:00 AM", name: "Poha with vegetables", calories: Math.round(calories * 0.2), protein_g: 10, carbs_g: 40, fat_g: 8, ingredients: ["Beaten rice", "Onion", "Peas", "Peanuts"] },
-        { meal_type: "Mid-Morning Snack", time: "11:00 AM", name: "Spiced Buttermilk or Fruit", calories: Math.round(calories * 0.1), protein_g: 5, carbs_g: 15, fat_g: 2, ingredients: ["Curd", "Jeera", "Salt"] },
-        { meal_type: "Lunch", time: "1:30 PM", name: "Dal, Paneer Sabzi & 2 Rotis", calories: Math.round(calories * 0.35), protein_g: 20, carbs_g: 50, fat_g: 15, ingredients: ["Lentils", "Paneer", "Whole wheat flour"] },
-        { meal_type: "Evening Snack", time: "5:00 PM", name: "Roasted Makhana or Nuts", calories: Math.round(calories * 0.1), protein_g: 5, carbs_g: 10, fat_g: 8, ingredients: ["Fox nuts", "Salt", "Turmeric"] },
-        { meal_type: "Dinner", time: "8:00 PM", name: "Mixed Veg Khichdi & Curd", calories: Math.round(calories * 0.25), protein_g: 15, carbs_g: 35, fat_g: 10, ingredients: ["Rice", "Moong dal", "Vegetables"] }
-      ]
-    }))
+        {
+          meal_type: "Breakfast",
+          time: "8:00 AM",
+          name: "Poha with vegetables",
+          calories: Math.round(calories * 0.2),
+          protein_g: 10,
+          carbs_g: 40,
+          fat_g: 8,
+          ingredients: ["Beaten rice", "Onion", "Peas", "Peanuts"],
+        },
+        {
+          meal_type: "Lunch",
+          time: "1:00 PM",
+          name: "Dal Tadka with 2 Roti and Salad",
+          calories: Math.round(calories * 0.35),
+          protein_g: 25,
+          carbs_g: 55,
+          fat_g: 12,
+          ingredients: ["Yellow lentils", "Whole wheat flour", "Cucumber", "Tomato"],
+        },
+        {
+          meal_type: "Snack",
+          time: "4:30 PM",
+          name: "Roasted Makhana or Fruit",
+          calories: Math.round(calories * 0.1),
+          protein_g: 5,
+          carbs_g: 20,
+          fat_g: 4,
+          ingredients: ["Fox nuts", "Seasonal fruit"],
+        },
+        {
+          meal_type: "Dinner",
+          time: "8:00 PM",
+          name: "Paneer/Tofu Bhurji with 1 Roti",
+          calories: Math.round(calories * 0.35),
+          protein_g: 30,
+          carbs_g: 35,
+          fat_g: 15,
+          ingredients: ["Paneer/Tofu", "Capsicum", "Onion", "Spices"],
+        },
+      ],
+    })),
   }
 }
 
 export async function POST(req: Request) {
-  let body: Record<string, unknown> = {}
-  let dailyCalories = 2000
+  const token = getTokenFromCookie(req.headers.get("cookie") ?? null)
+  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  const {
+    age,
+    gender,
+    weight,
+    height,
+    fitness_goal,
+    activity_level,
+    diet_preference,
+    food_allergies,
+  } = await req.json()
+
+  const bmr = gender === "male"
+    ? 10 * weight + 6.25 * height - 5 * age + 5
+    : 10 * weight + 6.25 * height - 5 * age - 161
+
+  const activityMultipliers: Record<string, number> = {
+    sedentary: 1.2,
+    light: 1.375,
+    moderate: 1.55,
+    active: 1.725,
+    very_active: 1.9,
+  }
+
+  const tdee = bmr * (activityMultipliers[activity_level] || 1.375)
+  let dailyCalories = Math.round(tdee)
+
+  if (fitness_goal === "weight_loss") dailyCalories -= 500
+  else if (fitness_goal === "muscle_gain") dailyCalories += 300
+
   try {
-    body = (await req.json()) as Record<string, unknown>
-    const age = (body.age as number) ?? 25
-    const gender = (body.gender as string) ?? "male"
-    const weight = (body.weight as number) ?? 70
-    const height = (body.height as number) ?? 170
-    const fitness_goal = (body.fitness_goal as string) ?? "general_fitness"
-    const activity_level = (body.activity_level as string) ?? "intermediate"
+    const prompt = `You are a professional Indian nutritionist. Generate a 7-day personalized Indian meal plan for a user with the following profile:
+    - Age: ${age}, Gender: ${gender}
+    - Weight: ${weight}kg, Height: ${height}cm
+    - Goal: ${fitness_goal}, Activity: ${activity_level}
+    - Diet: ${diet_preference}, Allergies: ${food_allergies}
+    - Daily Target: ${dailyCalories} calories
 
-    const diet_preference = (body.diet_preference as string) ?? "vegetarian"
-    const food_allergies = (body.food_allergies as string) ?? "None"
-
-    dailyCalories = calculateDailyCalories(
-      weight,
-      height,
-      age,
-      gender,
-      activity_level,
-      fitness_goal
-    )
-
-    const prompt = `You are a certified nutritionist specializing in Indian cuisine. Generate a 7-day meal plan.
-
-User Profile:
-- Age: ${age}, Gender: ${gender}, Weight: ${weight}kg, Height: ${height}cm
-- Fitness Goal: ${fitness_goal}
-- Diet Type: ${diet_preference}
-- Daily Calorie Target: ${dailyCalories} kcal
-- Food Allergies: ${food_allergies}
-- Cuisine Preference: Traditional Indian
-
-Generate a JSON response with EXACTLY this structure (no markdown, no code fences, just raw JSON):
-{
-  "daily_calories_target": ${dailyCalories},
-  "daily_plans": [
+    Provide the output in STRICT JSON format with this structure:
     {
-      "day": 1,
-      "day_name": "Monday",
-      "total_calories": 0,
-      "meals": [
+      "daily_calories_target": number,
+      "macro_targets": { "protein_percent": number, "carbs_percent": number, "fat_percent": number },
+      "weekly_tips": [string, string, ...],
+      "daily_plans": [
         {
-          "meal_type": "Breakfast",
-          "time": "7:00 AM",
-          "name": "Meal name here",
-          "calories": 0,
-          "protein_g": 0,
-          "carbs_g": 0,
-          "fat_g": 0,
-          "ingredients": ["ingredient1", "ingredient2"]
+          "day": number,
+          "day_name": string,
+          "total_calories": number,
+          "meals": [
+            { "meal_type": string, "time": string, "name": string, "calories": number, "protein_g": number, "carbs_g": number, "fat_g": number, "ingredients": [string, ...] }
+          ]
         }
       ]
     }
-  ],
-  "weekly_tips": ["tip1", "tip2", "tip3", "tip4", "tip5"],
-  "macro_targets": {
-    "protein_percent": 30,
-    "carbs_percent": 40,
-    "fat_percent": 30
-  }
-}
+    Use common Indian dishes like Poha, Upma, Dal, Roti, Sabzi, etc.
+    Return ONLY valid JSON.`
 
-Rules:
-- All meals must be ${diet_preference}
-- Avoid these allergens: ${food_allergies}
-- Use traditional Indian recipes and realistic Indian ingredients
-- 5 meals per day: Breakfast, Mid-Morning Snack, Lunch, Evening Snack, Dinner
-- Each day's total calories should be close to ${dailyCalories} kcal
-- Fill in realistic macro values (protein_g, carbs_g, fat_g) for every meal
-- Total calories for each meal should add up to approximately the day's total
-- Include 7 days (Monday through Sunday)
-- Include 5 practical weekly tips
-- Return ONLY valid JSON, no explanation text`
-
-    const result = await generateText({
+    const { text } = await generateText({
       model: groq("llama-3.3-70b-versatile"),
       prompt,
-      temperature: 0.7,
-      maxTokens: 8000,
     })
 
+    const jsonStr = text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1)
     let nutritionPlan
     try {
-      const text = result.text.trim()
-      const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/)
-      const jsonStr = jsonMatch ? jsonMatch[1].trim() : text
       nutritionPlan = JSON.parse(jsonStr)
     } catch {
       console.error("AI Parse failed, using fallback")
       return NextResponse.json({
         plan: getFallbackNutritionPlan(dailyCalories),
         fallback: true,
-        error: "AI parsing failed. Using optimized fallback plan."
+        error: "AI parsing failed. Using optimized fallback plan.",
       })
     }
 
-    return NextResponse.json({
-      plan: nutritionPlan,
-      daily_calories_target: dailyCalories,
-      bmr: calculateBMR(weight, height, age, gender),
+    const saveRes = await fetch(`${API_CONFIG.getBackendUrl()}/nutrition/plans`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        name: `AI Plan - ${fitness_goal}`,
+        description: `7-day ${diet_preference} meal plan for ${fitness_goal}`,
+        daily_calories: dailyCalories,
+        plan_data: nutritionPlan,
+      }),
     })
+
+    if (!saveRes.ok) {
+      console.warn("Failed to save nutrition plan to backend")
+      return NextResponse.json({
+        plan: nutritionPlan,
+        warning: "Plan generated but not saved to your profile.",
+      })
+    }
+
+    const savedPlan = await saveRes.json()
+    return NextResponse.json({ plan: { ...nutritionPlan, id: savedPlan.id } })
+
   } catch (error: unknown) {
     console.error("Nutrition API error:", error)
     return NextResponse.json({
       plan: getFallbackNutritionPlan(dailyCalories),
       fallback: true,
-      error: "AI generation unavailable. Using optimized fallback plan."
+      error: "AI generation unavailable. Using optimized fallback plan.",
     })
   }
 }

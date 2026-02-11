@@ -21,12 +21,11 @@ root (v00)
 
 ```bash
 cd backend
-python -m venv venv
-venv\Scripts\Activate.ps1   # Windows
 pip install -r requirements.txt
-# Ensure backend/.env exists (SECRET_KEY, DATABASE_URL, CORS_ORIGINS, etc.)
 python run.py
 ```
+
+Or with uvicorn directly: `uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`
 
 API: http://localhost:8000 · Docs: http://localhost:8000/docs
 
@@ -35,7 +34,7 @@ API: http://localhost:8000 · Docs: http://localhost:8000/docs
 ```bash
 cd frontend
 npm install
-cp ../.env .env.local   # or create; set NEXT_PUBLIC_BACKEND_URL and BACKEND_URL
+# Create .env.local with NEXT_PUBLIC_API_URL=http://localhost:8000 (see .env.local.example)
 npm run dev
 ```
 
@@ -43,15 +42,20 @@ App: http://localhost:3000
 
 ## Connection
 
-- Frontend calls the backend via **NEXT_PUBLIC_BACKEND_URL** / **BACKEND_URL** (default `http://localhost:8000`).
-- Config: `frontend/lib/backend-api.ts` (and auth API routes under `frontend/app/api/auth/`).
-- Backend CORS must allow the frontend origin (e.g. `http://localhost:3000`); set in `backend/.env` as `CORS_ORIGINS`.
+- Frontend API calls use **NEXT_PUBLIC_API_URL** (and **API_URL** server-side). Do not hardcode localhost; set env in production (e.g. Render).
+- Config: `frontend/config/api.ts` and `frontend/lib/backend-api.ts`.
+- Backend CORS must allow the frontend origin; set in `backend/.env` as `CORS_ORIGINS`.
+
+## Deploy (Render)
+
+- **Backend**: Build command `pip install -r requirements.txt`. Start command `uvicorn app.main:app --host 0.0.0.0 --port $PORT`. Set env: `SECRET_KEY`, `DATABASE_URL`, `CORS_ORIGINS` (your frontend URL), `GROQ_API_KEY`.
+- **Frontend**: Build `npm install && npm run build`. Start `npm start`. Set `NEXT_PUBLIC_API_URL` to your backend URL (e.g. `https://your-backend.onrender.com`) and `NEXT_PUBLIC_APP_URL` to your frontend URL.
 
 ## Env
 
 - **Root `.env`**: Reference only; do not commit secrets.
-- **Backend**: `backend/.env` – all server-side vars (SECRET_KEY, DATABASE_URL, GROQ_*, etc.).
-- **Frontend**: `frontend/.env.local` – only `NEXT_PUBLIC_BACKEND_URL` and `BACKEND_URL` (and optional GROQ for API routes). No secrets.
+- **Backend**: `backend/.env` – SECRET_KEY, DATABASE_URL, CORS_ORIGINS, GROQ_*, etc.
+- **Frontend**: `frontend/.env.local` – **NEXT_PUBLIC_API_URL** (backend API URL), **NEXT_PUBLIC_APP_URL** (this app’s URL for SSR), optional GROQ/Supabase. No secrets.
 
 ## Validation
 

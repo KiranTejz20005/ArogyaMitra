@@ -1,12 +1,10 @@
 import { getDashboardUser } from "@/lib/get-dashboard-user"
+import { getAppBaseUrl } from "@/lib/app-base-url"
 import { ProfileView } from "@/components/dashboard/profile-view"
 
 async function getProfileData(userId: string, source: "supabase" | "backend") {
   if (source === "backend") {
-    const base =
-      process.env.NEXT_PUBLIC_VERCEL_URL
-        ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-        : "http://localhost:3000"
+    const base = getAppBaseUrl()
     const { cookies } = await import("next/headers")
     const cookieStore = await cookies()
     const res = await fetch(`${base}/api/backend/auth/me`, {
