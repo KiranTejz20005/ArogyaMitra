@@ -60,7 +60,7 @@ export async function guestLoginBackend() {
     const d = await r.json().catch(() => ({}))
     const msg = (d.detail ?? d.error) as string | undefined
     if (r.status === 404) {
-      throw new Error("Backend guest endpoint not found. Is the API URL correct?")
+      throw new Error("Guest sign-in unavailable. Use the home link to continue.")
     }
     throw new Error(msg || "Guest login failed")
   }
